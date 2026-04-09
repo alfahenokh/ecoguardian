@@ -1,0 +1,3400 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoGuardian AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --green: #16a34a;
+        --green-l: #dcfce7;
+        --green-m: #bbf7d0;
+        --green-d: #15803d;
+        --teal: #0d9488;
+        --teal-l: #ccfbf1;
+        --amber: #d97706;
+        --amber-l: #fef3c7;
+        --red: #dc2626;
+        --red-l: #fee2e2;
+        --blue: #2563eb;
+        --blue-l: #dbeafe;
+        --bg: #f0f4f0;
+        --surface: #ffffff;
+        --surface2: #f8faf8;
+        --border: #e2e8e2;
+        --border2: #d1d9d1;
+        --text: #1a2e1a;
+        --text2: #4a6a4a;
+        --text3: #7a967a;
+        --sans: "Instrument Sans", sans-serif;
+        --serif: "Instrument Serif", serif;
+        --mono: "DM Mono", monospace;
+        --sidebar: 240px;
+        --radius: 14px;
+        --radius-sm: 8px;
+      }
+      html {
+        font-size: 14px;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: var(--sidebar);
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 100;
+        padding: 0 0 20px;
+      }
+      .sidebar-logo {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 8px;
+      }
+      .logo-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #16a34a, #0d9488);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .logo-icon svg {
+        color: #fff;
+      }
+      .logo-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.2;
+      }
+      .logo-sub {
+        font-size: 0.68rem;
+        color: var(--text3);
+        margin-top: 1px;
+      }
+      .nav-label {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        color: var(--text3);
+        text-transform: uppercase;
+        padding: 10px 20px 4px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 20px;
+        margin: 1px 8px;
+        border-radius: var(--radius-sm);
+        font-size: 0.84rem;
+        font-weight: 500;
+        color: var(--text2);
+        cursor: pointer;
+        transition: all 0.15s;
+        border: none;
+        background: none;
+        width: calc(100% - 16px);
+        text-align: left;
+      }
+      .nav-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .nav-item.active {
+        background: var(--green-l);
+        color: var(--green-d);
+        font-weight: 600;
+      }
+      .nav-item svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        opacity: 0.7;
+      }
+      .nav-item.active svg {
+        opacity: 1;
+      }
+      .nav-badge {
+        margin-left: auto;
+        background: var(--green);
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+      }
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 16px 20px 0;
+        border-top: 1px solid var(--border);
+      }
+      .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .user-chip:hover {
+        background: var(--surface2);
+      }
+      .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #16a34a, #0d9488);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .user-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .user-role {
+        font-size: 0.68rem;
+        color: var(--text3);
+      }
+
+      /* MAIN */
+      .main {
+        margin-left: var(--sidebar);
+        flex: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .page-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .page-sub {
+        font-size: 0.75rem;
+        color: var(--text3);
+        margin-top: 1px;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--green-l);
+        color: var(--green-d);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: pulse 2s infinite;
+      }
+      .content {
+        padding: 24px 28px;
+        flex: 1;
+      }
+
+      /* PAGE VIEWS */
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+        animation: fadeIn 0.25s ease;
+      }
+
+      /* RINGKASAN PAGE */
+      .summary-hero {
+        background: linear-gradient(135deg, #16a34a 0%, #0d9488 100%);
+        border-radius: var(--radius);
+        padding: 28px 32px;
+        color: #fff;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .summary-hero::before {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .summary-hero::after {
+        content: "";
+        position: absolute;
+        bottom: -60px;
+        right: 60px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .hero-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        opacity: 0.8;
+        text-transform: uppercase;
+      }
+      .hero-title {
+        font-family: var(--serif);
+        font-size: 1.8rem;
+        margin: 6px 0 4px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+      .hero-sub {
+        font-size: 0.82rem;
+        opacity: 0.85;
+      }
+      .hero-stats {
+        display: flex;
+        gap: 28px;
+        margin-top: 20px;
+      }
+      .hero-stat .val {
+        font-size: 1.6rem;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .hero-stat .lbl {
+        font-size: 0.7rem;
+        opacity: 0.75;
+        margin-top: 2px;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        transition: all 0.2s;
+        cursor: default;
+      }
+      .stat-card:hover {
+        border-color: var(--border2);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transform: translateY(-1px);
+      }
+      .sc-label {
+        font-size: 0.67rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--text3);
+        text-transform: uppercase;
+      }
+      .sc-value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        font-family: var(--mono);
+        color: var(--text);
+        margin: 6px 0 2px;
+        line-height: 1;
+      }
+      .sc-sub {
+        font-size: 0.72rem;
+        color: var(--text3);
+      }
+      .sc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-top: 8px;
+      }
+      .badge-green {
+        background: var(--green-l);
+        color: var(--green-d);
+      }
+      .badge-amber {
+        background: var(--amber-l);
+        color: var(--amber);
+      }
+      .badge-red {
+        background: var(--red-l);
+        color: var(--red);
+      }
+      .badge-blue {
+        background: var(--blue-l);
+        color: var(--blue);
+      }
+      .badge-teal {
+        background: var(--teal-l);
+        color: var(--teal);
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .three-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .card-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .card-sub {
+        font-size: 0.72rem;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+      .card-action {
+        font-size: 0.72rem;
+        color: var(--green-d);
+        font-weight: 600;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: var(--sans);
+        padding: 4px 10px;
+        border-radius: 6px;
+        transition: background 0.15s;
+      }
+      .card-action:hover {
+        background: var(--green-l);
+      }
+
+      /* AGEN STATUS */
+      .agent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .agent-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        transition: all 0.15s;
+        cursor: pointer;
+      }
+      .agent-row:hover {
+        border-color: var(--border2);
+        background: #fff;
+      }
+      .agent-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-green {
+        background: var(--green);
+        box-shadow: 0 0 6px rgba(22, 163, 74, 0.4);
+      }
+      .dot-amber {
+        background: var(--amber);
+      }
+      .dot-blue {
+        background: var(--blue);
+        box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+      }
+      .dot-teal {
+        background: var(--teal);
+        box-shadow: 0 0 6px rgba(13, 148, 136, 0.4);
+      }
+      .agent-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+      .agent-desc {
+        font-size: 0.72rem;
+        color: var(--text3);
+      }
+      .agent-status {
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 8px;
+      }
+
+      /* FORECAST BAR */
+      .forecast-grid {
+        display: flex;
+        gap: 8px;
+      }
+      .fc-day {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px 8px;
+        text-align: center;
+        transition: all 0.15s;
+        cursor: pointer;
+      }
+      .fc-day:hover {
+        background: var(--green-l);
+        border-color: var(--green-m);
+      }
+      .fc-day.today {
+        background: var(--green-l);
+        border-color: var(--green-m);
+      }
+      .fc-date {
+        font-size: 0.65rem;
+        color: var(--text3);
+        font-weight: 600;
+      }
+      .fc-icon {
+        font-size: 1.1rem;
+        margin: 4px 0;
+      }
+      .fc-max {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+        font-family: var(--mono);
+      }
+      .fc-min {
+        font-size: 0.68rem;
+        color: var(--text3);
+        font-family: var(--mono);
+      }
+      .fc-rain {
+        font-size: 0.62rem;
+        color: var(--blue);
+        margin-top: 2px;
+      }
+
+      /* ANALISIS PAGE */
+      .analysis-form {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      .form-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .form-sub {
+        font-size: 0.78rem;
+        color: var(--text3);
+        margin-bottom: 20px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .field-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 6px;
+        display: block;
+      }
+      .input-wrap {
+        position: relative;
+      }
+      .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text3);
+      }
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        padding: 10px 12px 10px 36px;
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 0.84rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        appearance: none;
+      }
+      .form-input:focus,
+      .form-select:focus,
+      .form-textarea:focus {
+        border-color: var(--green);
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+      }
+      .form-textarea {
+        padding: 10px 14px;
+        min-height: 80px;
+        resize: vertical;
+      }
+      .no-icon {
+        padding-left: 12px;
+      }
+      .quick-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+      .q-tag {
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        color: var(--text2);
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.74rem;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: var(--sans);
+        transition: all 0.15s;
+      }
+      .q-tag:hover {
+        background: var(--green-l);
+        border-color: var(--green-m);
+        color: var(--green-d);
+      }
+      .q-tag.active {
+        background: var(--green-l);
+        border-color: var(--green);
+        color: var(--green-d);
+        font-weight: 600;
+      }
+      .btn-primary {
+        width: 100%;
+        padding: 13px;
+        background: var(--green);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--sans);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-primary:hover {
+        background: var(--green-d);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+      }
+      .btn-primary:disabled {
+        background: var(--border2);
+        color: var(--text3);
+        transform: none;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+
+      /* LOADING AGENTS */
+      .loading-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+        display: none;
+      }
+      .loading-title {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--border2);
+        border-top-color: var(--green);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .agent-steps {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .step-card {
+        padding: 14px;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid var(--border);
+        background: var(--surface2);
+        transition: all 0.3s;
+      }
+      .step-card.running {
+        border-color: var(--green);
+        background: var(--green-l);
+      }
+      .step-card.done {
+        border-color: var(--green-m);
+        background: #f0fdf4;
+      }
+      .step-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+      .step-name {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .step-status {
+        font-size: 0.68rem;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+      .step-card.running .step-status {
+        color: var(--green-d);
+      }
+      .step-card.done .step-status {
+        color: var(--green-d);
+      }
+
+      /* RESULT */
+      .result-panel {
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+      .result-header {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .result-city {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .result-time {
+        font-size: 0.72rem;
+        color: var(--text3);
+        margin-top: 2px;
+      }
+      .risk-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .response-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+      }
+      .response-label {
+        font-size: 0.67rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--text3);
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .response-text {
+        font-size: 0.86rem;
+        line-height: 1.8;
+        color: var(--text);
+        white-space: pre-line;
+      }
+      .response-sources {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .src-tag {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 9px;
+        font-size: 0.65rem;
+        color: var(--text3);
+        font-family: var(--mono);
+      }
+
+      .metrics-side {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .metric-mini {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+      }
+      .mm-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .mm-value {
+        font-size: 1.3rem;
+        font-weight: 600;
+        font-family: var(--mono);
+        color: var(--text);
+        margin: 4px 0 2px;
+      }
+      .mm-sub {
+        font-size: 0.68rem;
+        color: var(--text3);
+      }
+
+      .insight-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .insight-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+      }
+      .ic-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .ic-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .ic-title {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .ic-body {
+        font-size: 0.78rem;
+        color: var(--text2);
+        line-height: 1.6;
+      }
+      .ic-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+      }
+      .ic-tag {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 2px 8px;
+        font-size: 0.67rem;
+        color: var(--text2);
+      }
+
+      /* PEMANTAUAN PAGE */
+      .monitor-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .monitor-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .monitor-card:hover {
+        border-color: var(--border2);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+      }
+      .mc-icon {
+        font-size: 1.4rem;
+        margin-bottom: 10px;
+      }
+      .mc-name {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .mc-val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        margin-bottom: 4px;
+      }
+      .mc-desc {
+        font-size: 0.72rem;
+        color: var(--text3);
+      }
+      .progress-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin-top: 10px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 1s ease;
+      }
+      .fill-green {
+        background: var(--green);
+      }
+      .fill-amber {
+        background: var(--amber);
+      }
+      .fill-red {
+        background: var(--red);
+      }
+      .fill-blue {
+        background: var(--blue);
+      }
+      .fill-teal {
+        background: var(--teal);
+      }
+
+      /* RENCANA AKSI */
+      .aksi-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .aksi-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        transition: all 0.15s;
+        cursor: pointer;
+      }
+      .aksi-item:hover {
+        border-color: var(--border2);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      .aksi-num {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .aksi-content {
+        flex: 1;
+      }
+      .aksi-title {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .aksi-desc {
+        font-size: 0.78rem;
+        color: var(--text2);
+        line-height: 1.6;
+      }
+      .aksi-meta {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .aksi-tag {
+        font-size: 0.67rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+      .aksi-check {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--border2);
+        flex-shrink: 0;
+        margin-top: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+      .aksi-check.checked {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+      }
+      .aksi-check:hover {
+        border-color: var(--green);
+      }
+
+      /* AUDIT ETIKA */
+      .etika-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .etika-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+      }
+      .etika-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .etika-icon {
+        font-size: 1.2rem;
+      }
+      .etika-title {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .etika-score {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        margin-bottom: 6px;
+      }
+      .etika-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.78rem;
+      }
+      .etika-item:last-child {
+        border-bottom: none;
+      }
+      .etika-check {
+        font-size: 0.8rem;
+      }
+      .etika-text {
+        flex: 1;
+        color: var(--text2);
+      }
+      .etika-pass {
+        color: var(--green);
+        font-weight: 600;
+        font-size: 0.7rem;
+      }
+      .etika-warn {
+        color: var(--amber);
+        font-weight: 600;
+        font-size: 0.7rem;
+      }
+
+      /* PROGRESS KEMAJUAN */
+      .kemajuan-wrap {
+        margin-bottom: 20px;
+      }
+      .kemajuan-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        margin-bottom: 10px;
+      }
+      .kj-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .kj-title {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .kj-pct {
+        font-size: 0.78rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--green-d);
+      }
+      .kj-bar {
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .kj-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--green), var(--teal));
+        transition: width 1.2s ease;
+      }
+      .kj-meta {
+        font-size: 0.72rem;
+        color: var(--text3);
+        margin-top: 6px;
+      }
+
+      /* ANIMATIONS */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
+        }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .stagger > * {
+        animation: slideIn 0.3s ease both;
+      }
+      .stagger > *:nth-child(1) {
+        animation-delay: 0.05s;
+      }
+      .stagger > *:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .stagger > *:nth-child(3) {
+        animation-delay: 0.15s;
+      }
+      .stagger > *:nth-child(4) {
+        animation-delay: 0.2s;
+      }
+      .stagger > *:nth-child(5) {
+        animation-delay: 0.25s;
+      }
+      .stagger > *:nth-child(6) {
+        animation-delay: 0.3s;
+      }
+
+      /* DIVIDER */
+      .section-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 12px;
+      }
+
+      /* TOOLTIP */
+      [data-tip] {
+        position: relative;
+      }
+      [data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a2e1a;
+        color: #fff;
+        font-size: 0.68rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      /* EMPTY STATE */
+      .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        color: var(--text3);
+      }
+      .empty-icon {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+      }
+      .empty-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 6px;
+      }
+      .empty-desc {
+        font-size: 0.78rem;
+      }
+
+      /* MAP */
+      .map-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .map-head {
+        padding: 14px 18px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #ecoMap {
+        height: 280px;
+        width: 100%;
+      }
+      /* SOURCES PANEL */
+      .sources-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .sources-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 10px;
+      }
+      .src-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        text-decoration: none;
+        color: var(--text2);
+        font-size: 0.7rem;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+      .src-pill:hover {
+        background: var(--green-l);
+        border-color: var(--green-m);
+        color: var(--green-d);
+      }
+      .src-pill.bmkg {
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+        color: #0369a1;
+      }
+      .src-pill.bmkg:hover {
+        background: #bae6fd;
+      }
+      /* GROQ PANEL */
+      .groq-panel {
+        background: linear-gradient(135deg, #f0f9ff, #f0fdf4);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .groq-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+        font-size: 0.78rem;
+      }
+      .groq-warn {
+        grid-column: 1/-1;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--red);
+        font-size: 0.76rem;
+      }
+      .comfort-ring {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 3px solid;
+        font-family: var(--mono);
+        font-size: 0.88rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      /* NOTIFICATION */
+      .notif {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        background: #1a2e1a;
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: var(--radius-sm);
+        font-size: 0.82rem;
+        font-weight: 500;
+        transform: translateY(80px);
+        opacity: 0;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .notif.show {
+        transform: none;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-wrap">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle
+                cx="10"
+                cy="10"
+                r="8"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M5 13c1.5-3 3-5 5-5s3.5 2 5 5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="10"
+                cy="7"
+                r="1.5"
+                fill="currentColor"
+                opacity="0.7"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="logo-title">
+              EcoGuardian
+              <span
+                style="
+                  font-size: 0.65rem;
+                  background: #dcfce7;
+                  color: #15803d;
+                  padding: 1px 5px;
+                  border-radius: 4px;
+                  vertical-align: middle;
+                "
+                >AI</span
+              >
+            </div>
+            <div class="logo-sub">Masa Depan Berkelanjutan</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-label">Navigasi Utama</div>
+      <button class="nav-item active" onclick="showPage('ringkasan',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <rect x="2" y="2" width="5" height="5" rx="1" />
+          <rect x="9" y="2" width="5" height="5" rx="1" />
+          <rect x="2" y="9" width="5" height="5" rx="1" />
+          <rect x="9" y="9" width="5" height="5" rx="1" />
+        </svg>
+        Ringkasan
+        <span class="nav-badge" id="navBadge" style="display: none">•</span>
+      </button>
+      <button class="nav-item" onclick="showPage('pemantauan',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <polyline points="2,12 5,8 8,10 11,5 14,7" />
+          <path d="M14 2v4h-4" />
+        </svg>
+        Pemantauan Data
+      </button>
+      <button class="nav-item" onclick="showPage('analisis',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <circle cx="8" cy="8" r="6" />
+          <path d="M8 5v3l2 2" />
+        </svg>
+        Analisis Dampak
+      </button>
+      <button class="nav-item" onclick="showPage('aksi',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path d="M3 8l4 4 6-6" />
+        </svg>
+        Rencana Aksi
+      </button>
+      <button class="nav-item" onclick="showPage('etika',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5l3.5-.5z"
+          />
+        </svg>
+        Audit Etika
+      </button>
+      <button class="nav-item" onclick="showPage('kemajuan',this)">
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <rect x="2" y="10" width="3" height="4" rx="1" />
+          <rect x="6.5" y="7" width="3" height="7" rx="1" />
+          <rect x="11" y="4" width="3" height="10" rx="1" />
+        </svg>
+        Lacak Kemajuan
+      </button>
+
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="avatar">N</div>
+          <div>
+            <div class="user-name">Pengguna</div>
+            <div class="user-role">Pengaturan</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="pageTitle">Ringkasan Dashboard</div>
+          <div class="page-sub" id="pageSub">
+            Gambaran umum kondisi lingkungan dan sosial
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="status-pill">
+            <div class="status-dot"></div>
+            <span id="statusLabel">Gemini 2.5 Flash + Groq — Aktif</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- ===== PAGE: RINGKASAN ===== -->
+        <div class="page active" id="page-ringkasan">
+          <div class="summary-hero">
+            <div class="hero-label">Dashboard Utama</div>
+            <div class="hero-title">Selamat Datang di EcoGuardian</div>
+            <div class="hero-sub">
+              Sistem multi-agent AI untuk pemantauan lingkungan dan dampak
+              sosial secara real-time
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat">
+                <div class="val">4</div>
+                <div class="lbl">Agen Aktif</div>
+              </div>
+              <div class="hero-stat">
+                <div class="val">8</div>
+                <div class="lbl">Sumber Data</div>
+              </div>
+              <div class="hero-stat">
+                <div class="val" id="heroAnalysisCount">0</div>
+                <div class="lbl">Analisis Selesai</div>
+              </div>
+              <div class="hero-stat">
+                <div class="val">100%</div>
+                <div class="lbl">Layanan Gratis</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cards-grid stagger" id="summaryCards">
+            <div class="stat-card">
+              <div class="sc-label">Kualitas Udara (AQI)</div>
+              <div class="sc-value" id="s-aqi">—</div>
+              <div class="sc-sub" id="s-aqi-lbl">Belum dianalisis</div>
+              <div class="sc-badge badge-green" id="s-aqi-badge">
+                Perlu Analisis
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Suhu</div>
+              <div class="sc-value" id="s-temp">—</div>
+              <div class="sc-sub" id="s-temp-lbl">— °C</div>
+              <div class="sc-badge badge-blue">Real-time</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Tingkat Risiko</div>
+              <div class="sc-value" id="s-risk">—</div>
+              <div class="sc-sub" id="s-risk-lbl">Belum ada data</div>
+              <div class="sc-badge badge-amber" id="s-risk-badge">
+                Belum Dianalisis
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Skor Sosial</div>
+              <div class="sc-value" id="s-social">—</div>
+              <div class="sc-sub">Indeks kerentanan sosial</div>
+              <div class="sc-badge badge-teal">World Bank</div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title">Status Agen AI</div>
+                  <div class="card-sub">4 agen berjalan paralel</div>
+                </div>
+                <button
+                  class="card-action"
+                  onclick="showPage('analisis', document.querySelector('[onclick*=analisis]'))"
+                >
+                  Jalankan →
+                </button>
+              </div>
+              <div class="agent-list">
+                <div
+                  class="agent-row"
+                  onclick="showPage('analisis',document.querySelector('[onclick*=analisis]'))"
+                >
+                  <div class="agent-dot dot-green"></div>
+                  <div>
+                    <div class="agent-name">Monitor Agent</div>
+                    <div class="agent-desc">
+                      Kualitas udara & cuaca real-time
+                    </div>
+                  </div>
+                  <span class="agent-status badge-green">Siap</span>
+                </div>
+                <div
+                  class="agent-row"
+                  onclick="showPage('analisis',document.querySelector('[onclick*=analisis]'))"
+                >
+                  <div class="agent-dot dot-blue"></div>
+                  <div>
+                    <div class="agent-name">Predict Agent</div>
+                    <div class="agent-desc">
+                      Prediksi risiko 7 hari ke depan
+                    </div>
+                  </div>
+                  <span class="agent-status badge-blue">Siap</span>
+                </div>
+                <div
+                  class="agent-row"
+                  onclick="showPage('analisis',document.querySelector('[onclick*=analisis]'))"
+                >
+                  <div class="agent-dot dot-teal"></div>
+                  <div>
+                    <div class="agent-name">Social Agent</div>
+                    <div class="agent-desc">Dampak sosial & kerentanan</div>
+                  </div>
+                  <span class="agent-status badge-teal">Siap</span>
+                </div>
+                <div
+                  class="agent-row"
+                  onclick="showPage('analisis',document.querySelector('[onclick*=analisis]'))"
+                >
+                  <div class="agent-dot dot-amber"></div>
+                  <div>
+                    <div class="agent-name">Report Agent</div>
+                    <div class="agent-desc">
+                      Laporan komprehensif terintegrasi
+                    </div>
+                  </div>
+                  <span class="agent-status badge-amber">Siap</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title">Prakiraan Cuaca</div>
+                  <div class="card-sub" id="forecast-city-label">
+                    Ketik wilayah dan jalankan analisis
+                  </div>
+                </div>
+              </div>
+              <div class="forecast-grid" id="forecastGrid">
+                <div
+                  style="
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--text3);
+                    font-size: 0.78rem;
+                    width: 100%;
+                  "
+                >
+                  Belum ada data prakiraan
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Riwayat Analisis Terakhir</div>
+                <div class="card-sub">Hasil analisis terbaru dari sesi ini</div>
+              </div>
+              <button
+                class="card-action"
+                onclick="showPage('analisis',document.querySelector('[onclick*=analisis]'))"
+              >
+                Analisis Baru →
+              </button>
+            </div>
+            <div id="historyCards">
+              <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-title">Belum Ada Analisis</div>
+                <div class="empty-desc">
+                  Pergi ke halaman Analisis Dampak untuk memulai
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: PEMANTAUAN ===== -->
+        <div class="page" id="page-pemantauan">
+          <div class="section-title">Indikator Lingkungan Real-Time</div>
+          <div class="monitor-grid stagger" id="monitorGrid">
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data AQI dari WAQI API')"
+            >
+              <div class="mc-icon">🌫️</div>
+              <div class="mc-name">Indeks Kualitas Udara (AQI)</div>
+              <div class="mc-val" id="m-aqi" style="color: var(--green-d)">
+                —
+              </div>
+              <div class="mc-desc" id="m-aqi-desc">Belum ada data</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-green"
+                  id="m-aqi-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data PM2.5 dari WAQI API')"
+            >
+              <div class="mc-icon">💨</div>
+              <div class="mc-name">Partikel PM2.5</div>
+              <div class="mc-val" id="m-pm25" style="color: var(--blue)">—</div>
+              <div class="mc-desc">μg/m³ — Batas aman: 25</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-blue"
+                  id="m-pm25-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data suhu dari OpenWeatherMap')"
+            >
+              <div class="mc-icon">🌡️</div>
+              <div class="mc-name">Suhu Udara</div>
+              <div class="mc-val" id="m-temp" style="color: var(--amber)">
+                —
+              </div>
+              <div class="mc-desc" id="m-temp-desc">Belum ada data</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-amber"
+                  id="m-temp-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data kelembaban dari OpenWeatherMap')"
+            >
+              <div class="mc-icon">💧</div>
+              <div class="mc-name">Kelembaban</div>
+              <div class="mc-val" id="m-humidity" style="color: var(--teal)">
+                —
+              </div>
+              <div class="mc-desc">% — Optimal: 40–60%</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-teal"
+                  id="m-humidity-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data angin dari OpenWeatherMap')"
+            >
+              <div class="mc-icon">🌬️</div>
+              <div class="mc-name">Kecepatan Angin</div>
+              <div class="mc-val" id="m-wind" style="color: var(--text2)">
+                —
+              </div>
+              <div class="mc-desc">m/s</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-green"
+                  id="m-wind-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="monitor-card"
+              onclick="showNotif('Data polutan dari WAQI API')"
+            >
+              <div class="mc-icon">⚗️</div>
+              <div class="mc-name">Polutan Dominan</div>
+              <div
+                class="mc-val"
+                id="m-pollutant"
+                style="font-size: 1rem; color: var(--red)"
+              >
+                —
+              </div>
+              <div class="mc-desc">Senyawa paling berbahaya</div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill fill-red"
+                  id="m-poll-bar"
+                  style="width: 30%"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">Sumber Data yang Digunakan</div>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+              "
+            >
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  WAQI API
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  Kualitas udara — aqicn.org
+                </div>
+                <div class="sc-badge badge-green" style="margin-top: 6px">
+                  Free Token
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  OpenWeatherMap
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  Cuaca real-time — openweathermap.org
+                </div>
+                <div class="sc-badge badge-blue" style="margin-top: 6px">
+                  1000/hari
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  Open-Meteo
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  Prakiraan 7 hari — open-meteo.com
+                </div>
+                <div class="sc-badge badge-teal" style="margin-top: 6px">
+                  100% Gratis
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  World Bank API
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  Data sosial — worldbank.org
+                </div>
+                <div class="sc-badge badge-teal" style="margin-top: 6px">
+                  100% Gratis
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  Gemini 2.5 Flash
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  LLM backbone — Google AI Studio
+                </div>
+                <div class="sc-badge badge-green" style="margin-top: 6px">
+                  1500/hari
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 12px;
+                  background: var(--surface2);
+                  border-radius: var(--radius-sm);
+                  border: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 2px;
+                  "
+                >
+                  SQLite
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text3)">
+                  Database lokal — built-in Python
+                </div>
+                <div class="sc-badge badge-green" style="margin-top: 6px">
+                  Gratis
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: ANALISIS ===== -->
+        <div class="page" id="page-analisis">
+          <div class="analysis-form">
+            <div class="form-title">Analisis Dampak Lingkungan & Sosial</div>
+            <div class="form-sub">
+              Masukkan wilayah dan pertanyaan untuk dianalisis oleh 4 agen AI
+              secara paralel.
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label class="field-label" for="cityInput"
+                  >Wilayah yang Dianalisis</label
+                >
+                <div class="input-wrap">
+                  <span class="input-icon">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <circle cx="7" cy="6" r="3" />
+                      <path
+                        d="M7 1C4.24 1 2 3.24 2 6c0 3.5 5 8 5 8s5-4.5 5-8c0-2.76-2.24-5-5-5z"
+                      />
+                    </svg>
+                  </span>
+                  <input
+                    id="cityInput"
+                    class="form-input"
+                    placeholder="Ketik nama kota/wilayah bebas, misal: Flores, Samarinda, Nusa Tenggara..."
+                    value="Jakarta"
+                    autocomplete="off"
+                  />
+                </div>
+                <div
+                  style="
+                    margin-top: 6px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 5px;
+                  "
+                  id="cityQuickBtns"
+                >
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Jakarta')"
+                  >
+                    Jakarta
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Surabaya')"
+                  >
+                    Surabaya
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Bandung')"
+                  >
+                    Bandung
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Medan')"
+                  >
+                    Medan
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Bali')"
+                  >
+                    Bali
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Makassar')"
+                  >
+                    Makassar
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Flores')"
+                  >
+                    Flores
+                  </button>
+                  <button
+                    class="q-tag"
+                    style="font-size: 0.67rem; padding: 3px 9px"
+                    onclick="setCityQuick('Samarinda')"
+                  >
+                    Samarinda
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="field-label">Area Fokus</label>
+                <div class="input-wrap">
+                  <span class="input-icon">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <circle cx="6" cy="6" r="4" />
+                      <path d="M11 11l-2-2" />
+                    </svg>
+                  </span>
+                  <input
+                    id="focusInput"
+                    class="form-input"
+                    placeholder="polusi udara, dampak sosial..."
+                    value="polusi udara, kualitas lingkungan"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <label class="field-label">Pertanyaan Analisis</label>
+            <textarea
+              id="queryInput"
+              class="form-textarea no-icon"
+              placeholder="Contoh: Bagaimana kondisi kualitas udara dan dampaknya terhadap masyarakat rentan?"
+            ></textarea>
+
+            <div style="margin: 12px 0 4px">
+              <label class="field-label">Pertanyaan Cepat</label>
+              <div class="quick-tags">
+                <button
+                  class="q-tag"
+                  onclick="setQuery(this,'Bagaimana kondisi kualitas udara hari ini dan siapa yang paling terdampak?')"
+                >
+                  Kualitas Udara
+                </button>
+                <button
+                  class="q-tag"
+                  onclick="setQuery(this,'Prediksi risiko lingkungan 7 hari ke depan dan langkah pencegahannya')"
+                >
+                  Prediksi 7 Hari
+                </button>
+                <button
+                  class="q-tag"
+                  onclick="setQuery(this,'Kelompok masyarakat mana yang paling rentan dan apa yang perlu dilakukan?')"
+                >
+                  Dampak Sosial
+                </button>
+                <button
+                  class="q-tag"
+                  onclick="setQuery(this,'Rekomendasi aksi konkret untuk mengurangi risiko polusi dan ketimpangan akses')"
+                >
+                  Rencana Aksi
+                </button>
+                <button
+                  class="q-tag"
+                  onclick="setQuery(this,'Analisis lengkap kondisi lingkungan, prediksi risiko, dan dampak sosial')"
+                >
+                  Analisis Lengkap
+                </button>
+              </div>
+            </div>
+
+            <button class="btn-primary" id="analyzeBtn" onclick="runAnalysis()">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 5v3l2 2" />
+              </svg>
+              <span id="btnText">Jalankan Analisis Multi-Agent</span>
+            </button>
+          </div>
+
+          <!-- Loading Panel -->
+          <div class="loading-panel" id="loadingPanel">
+            <div class="loading-title">
+              <div class="spinner"></div>
+              Agen AI sedang bekerja...
+            </div>
+            <div class="agent-steps">
+              <div class="step-card" id="step1">
+                <div class="step-icon">🌫️</div>
+                <div class="step-name">Monitor Agent</div>
+                <div class="step-status">Menunggu...</div>
+              </div>
+              <div class="step-card" id="step2">
+                <div class="step-icon">📈</div>
+                <div class="step-name">Predict Agent</div>
+                <div class="step-status">Menunggu...</div>
+              </div>
+              <div class="step-card" id="step3">
+                <div class="step-icon">👥</div>
+                <div class="step-name">Social Agent</div>
+                <div class="step-status">Menunggu...</div>
+              </div>
+              <div class="step-card" id="step4">
+                <div class="step-icon">📋</div>
+                <div class="step-name">Report Agent</div>
+                <div class="step-status">Menunggu...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result Panel -->
+          <div class="result-panel" id="resultPanel">
+            <div class="result-header">
+              <div>
+                <div class="result-city" id="resultCity">—</div>
+                <div class="result-time" id="resultTime">—</div>
+              </div>
+              <div class="risk-badge badge-green" id="riskBadge">— Risiko</div>
+            </div>
+
+            <div class="result-grid">
+              <div class="response-card">
+                <div class="response-label">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="var(--green)"
+                  >
+                    <circle cx="6" cy="6" r="5" />
+                  </svg>
+                  Laporan Analisis
+                </div>
+                <div class="response-text" id="responseText">—</div>
+                <div class="response-sources">
+                  <span class="src-tag">Monitor Agent</span>
+                  <span class="src-tag">Predict Agent</span>
+                  <span class="src-tag">Social Agent</span>
+                  <span class="src-tag">Gemini 2.5 Flash</span>
+                  <span class="src-tag">WAQI API</span>
+                  <span class="src-tag">OpenWeatherMap</span>
+                  <span class="src-tag">Open-Meteo</span>
+                  <span class="src-tag">World Bank</span>
+                </div>
+              </div>
+              <div class="metrics-side">
+                <div class="metric-mini">
+                  <div class="mm-label">AQI</div>
+                  <div class="mm-value" id="r-aqi">—</div>
+                  <div class="mm-sub" id="r-aqi-lbl">Indeks Kualitas Udara</div>
+                </div>
+                <div class="metric-mini">
+                  <div class="mm-label">Suhu</div>
+                  <div class="mm-value" id="r-temp">—</div>
+                  <div class="mm-sub" id="r-weather">—</div>
+                </div>
+                <div class="metric-mini">
+                  <div class="mm-label">PM2.5</div>
+                  <div class="mm-value" id="r-pm25">—</div>
+                  <div class="mm-sub">μg/m³</div>
+                </div>
+                <div class="metric-mini">
+                  <div class="mm-label">Kelembaban</div>
+                  <div class="mm-value" id="r-humidity">—</div>
+                  <div class="mm-sub">%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-row">
+              <div class="insight-card">
+                <div class="ic-head">
+                  <div class="ic-dot" style="background: var(--teal)"></div>
+                  <div class="ic-title">Monitor Agent</div>
+                </div>
+                <div class="ic-body" id="monitorInsight">—</div>
+              </div>
+              <div class="insight-card">
+                <div class="ic-head">
+                  <div class="ic-dot" style="background: var(--amber)"></div>
+                  <div class="ic-title">Predict Agent</div>
+                </div>
+                <div class="ic-body" id="predictInsight">—</div>
+              </div>
+              <div class="insight-card">
+                <div class="ic-head">
+                  <div class="ic-dot" style="background: var(--blue)"></div>
+                  <div class="ic-title">Social Agent</div>
+                </div>
+                <div class="ic-body" id="socialInsight">—</div>
+              </div>
+            </div>
+
+            <!-- MAP PANEL -->
+            <div class="map-panel" id="mapPanel">
+              <div class="map-head">
+                <div>
+                  <div class="card-title">📍 Peta Wilayah Analisis</div>
+                  <div class="card-sub" id="mapSubtitle">—</div>
+                </div>
+                <span class="sc-badge badge-green" id="mapRiskBadge"></span>
+              </div>
+              <div id="ecoMap"></div>
+            </div>
+
+            <!-- GROQ PANEL -->
+            <div class="groq-panel" id="groqPanel">
+              <div style="display: flex; align-items: center; gap: 10px">
+                <div>
+                  <div class="card-title">
+                    🤖 Analisis Prediksi Cuaca — Groq / Llama-3.3-70b
+                  </div>
+                  <div class="card-sub">
+                    Insight tambahan dari model AI terbuka berkecepatan tinggi
+                  </div>
+                </div>
+              </div>
+              <div class="groq-grid" id="groqBody">—</div>
+            </div>
+
+            <!-- SOURCES PANEL -->
+            <div class="sources-panel" id="sourcesPanel">
+              <div class="card-title">📚 Sumber Data Resmi yang Digunakan</div>
+              <div class="card-sub" style="margin-top: 2px">
+                Klik untuk mengunjungi sumber aslinya
+              </div>
+              <div class="sources-grid" id="sourcesGrid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: RENCANA AKSI ===== -->
+        <div class="page" id="page-aksi">
+          <div class="card" style="margin-bottom: 16px">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Rencana Aksi Prioritas</div>
+                <div class="card-sub" id="aksiSub">
+                  Berdasarkan analisis terbaru — klik untuk menandai selesai
+                </div>
+              </div>
+              <span class="sc-badge badge-green" id="aksiCount">0 Aksi</span>
+            </div>
+            <div class="aksi-list" id="aksiList">
+              <div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <div class="empty-title">Belum Ada Rencana Aksi</div>
+                <div class="empty-desc">
+                  Jalankan analisis untuk mendapatkan rekomendasi aksi konkret
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: AUDIT ETIKA ===== -->
+        <div class="page" id="page-etika">
+          <div class="etika-grid stagger">
+            <div class="etika-card">
+              <div class="etika-header">
+                <div class="etika-icon">🛡️</div>
+                <div>
+                  <div class="etika-title">Transparansi Data</div>
+                  <div style="font-size: 0.7rem; color: var(--text3)">
+                    Keterbukaan sumber informasi
+                  </div>
+                </div>
+              </div>
+              <div class="etika-score" style="color: var(--green)">95/100</div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Semua sumber data dicantumkan</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">API gratis dan terdokumentasi</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Tidak ada data pribadi disimpan</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">⚠️</span
+                ><span class="etika-text">Cache data 20 menit</span
+                ><span class="etika-warn">INFO</span>
+              </div>
+            </div>
+            <div class="etika-card">
+              <div class="etika-header">
+                <div class="etika-icon">⚖️</div>
+                <div>
+                  <div class="etika-title">Keadilan & Inklusi</div>
+                  <div style="font-size: 0.7rem; color: var(--text3)">
+                    Pemerataan manfaat sistem
+                  </div>
+                </div>
+              </div>
+              <div class="etika-score" style="color: var(--green)">92/100</div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Mempertimbangkan kelompok rentan</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Bahasa inklusif dan ramah</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Data sosial dari World Bank</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">⚠️</span
+                ><span class="etika-text">Akurasi tergantung data API</span
+                ><span class="etika-warn">MITIGASI</span>
+              </div>
+            </div>
+            <div class="etika-card">
+              <div class="etika-header">
+                <div class="etika-icon">🤖</div>
+                <div>
+                  <div class="etika-title">Kualitas Model AI</div>
+                  <div style="font-size: 0.7rem; color: var(--text3)">
+                    Akurasi dan reliabilitas output
+                  </div>
+                </div>
+              </div>
+              <div class="etika-score" style="color: var(--green)">88/100</div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Gemini 2.5 Flash — model terkini</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Output terstruktur JSON + narasi</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">4 agen saling memvalidasi</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">⚠️</span
+                ><span class="etika-text"
+                  >Tidak menggantikan ahli lingkungan</span
+                ><span class="etika-warn">CATATAN</span>
+              </div>
+            </div>
+            <div class="etika-card">
+              <div class="etika-header">
+                <div class="etika-icon">🌱</div>
+                <div>
+                  <div class="etika-title">Dampak Lingkungan Sistem</div>
+                  <div style="font-size: 0.7rem; color: var(--text3)">
+                    Jejak karbon operasional
+                  </div>
+                </div>
+              </div>
+              <div class="etika-score" style="color: var(--teal)">90/100</div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Cache mengurangi API calls</span
+                ><span class="etika-pass">EFISIEN</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">SQLite lokal, tanpa cloud DB</span
+                ><span class="etika-pass">EFISIEN</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Gemini Flash model ringan</span
+                ><span class="etika-pass">EFISIEN</span>
+              </div>
+              <div class="etika-item">
+                <span class="etika-check">✅</span
+                ><span class="etika-text">Semua layanan free tier</span
+                ><span class="etika-pass">LULUS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: KEMAJUAN ===== -->
+        <div class="page" id="page-kemajuan">
+          <div class="section-title" style="margin-bottom: 16px">
+            Lacak Kemajuan Program
+          </div>
+          <div class="kemajuan-wrap stagger" id="kemajuanList">
+            <div class="kemajuan-item">
+              <div class="kj-head">
+                <div class="kj-title">Analisis Kualitas Udara</div>
+                <div class="kj-pct" id="kj-aqi-pct">0%</div>
+              </div>
+              <div class="kj-bar">
+                <div class="kj-fill" id="kj-aqi-fill" style="width: 0%"></div>
+              </div>
+              <div class="kj-meta" id="kj-aqi-meta">
+                Belum ada analisis. Jalankan analisis untuk melacak kemajuan.
+              </div>
+            </div>
+            <div class="kemajuan-item">
+              <div class="kj-head">
+                <div class="kj-title">Prediksi Risiko Lingkungan</div>
+                <div class="kj-pct" id="kj-risk-pct">0%</div>
+              </div>
+              <div class="kj-bar">
+                <div class="kj-fill" id="kj-risk-fill" style="width: 0%"></div>
+              </div>
+              <div class="kj-meta" id="kj-risk-meta">Belum ada prediksi.</div>
+            </div>
+            <div class="kemajuan-item">
+              <div class="kj-head">
+                <div class="kj-title">Analisis Dampak Sosial</div>
+                <div class="kj-pct" id="kj-social-pct">0%</div>
+              </div>
+              <div class="kj-bar">
+                <div
+                  class="kj-fill"
+                  id="kj-social-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div class="kj-meta" id="kj-social-meta">
+                Belum ada data sosial.
+              </div>
+            </div>
+            <div class="kemajuan-item">
+              <div class="kj-head">
+                <div class="kj-title">Rencana Aksi Diselesaikan</div>
+                <div class="kj-pct" id="kj-aksi-pct">0%</div>
+              </div>
+              <div class="kj-bar">
+                <div class="kj-fill" id="kj-aksi-fill" style="width: 0%"></div>
+              </div>
+              <div class="kj-meta" id="kj-aksi-meta">
+                0 dari 0 aksi selesai.
+              </div>
+            </div>
+            <div class="kemajuan-item">
+              <div class="kj-head">
+                <div class="kj-title">Total Analisis Sesi Ini</div>
+                <div class="kj-pct" id="kj-total-pct">0</div>
+              </div>
+              <div class="kj-bar">
+                <div class="kj-fill" id="kj-total-fill" style="width: 0%"></div>
+              </div>
+              <div class="kj-meta" id="kj-total-meta">
+                Belum ada analisis dalam sesi ini.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notif" id="notif">
+      <span>✓</span>
+      <span id="notifText"></span>
+    </div>
+
+    <script>
+      let sessionId = localStorage.getItem("eco_session") || "";
+      let isLoading = false;
+      let analysisCount = 0;
+      let aksiChecked = 0;
+      let aksiTotal = 0;
+      let lastResult = null;
+
+      const pageMeta = {
+        ringkasan: [
+          "Ringkasan Dashboard",
+          "Gambaran umum kondisi lingkungan dan sosial",
+        ],
+        pemantauan: [
+          "Pemantauan Data Real-Time",
+          "Data lingkungan langsung dari API terpercaya",
+        ],
+        analisis: [
+          "Analisis Dampak",
+          "Jalankan analisis multi-agent AI untuk wilayah pilihan",
+        ],
+        aksi: [
+          "Rencana Aksi",
+          "Rekomendasi tindakan konkret berdasarkan analisis",
+        ],
+        etika: [
+          "Audit Etika & Transparansi",
+          "Standar etika, keadilan, dan kualitas sistem AI",
+        ],
+        kemajuan: [
+          "Lacak Kemajuan",
+          "Monitor perkembangan analisis dan aksi yang dilakukan",
+        ],
+      };
+
+      function showPage(name, btn) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((n) => n.classList.remove("active"));
+        document.getElementById("page-" + name).classList.add("active");
+        if (btn) btn.classList.add("active");
+        const meta = pageMeta[name] || ["", ""];
+        document.getElementById("pageTitle").textContent = meta[0];
+        document.getElementById("pageSub").textContent = meta[1];
+      }
+
+      function setQuery(el, text) {
+        document
+          .querySelectorAll(".q-tag")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+        document.getElementById("queryInput").value = text;
+      }
+
+      function showNotif(msg) {
+        const n = document.getElementById("notif");
+        document.getElementById("notifText").textContent = msg;
+        n.classList.add("show");
+        setTimeout(() => n.classList.remove("show"), 2500);
+      }
+
+      function setCityQuick(name) {
+        document.getElementById("cityInput").value = name;
+        document
+          .querySelectorAll("#cityQuickBtns .q-tag")
+          .forEach((b) => b.classList.remove("active"));
+        event.target.classList.add("active");
+      }
+
+      async function runAnalysis() {
+        if (isLoading) return;
+        const query = document.getElementById("queryInput").value.trim();
+        const city = (
+          document.getElementById("cityInput").value || "Jakarta"
+        ).trim();
+        // Auto-detect country from city name (basic heuristic)
+        const countryMap = {
+          singapore: "SG",
+          "kuala lumpur": "MY",
+          bangkok: "TH",
+          tokyo: "JP",
+          manila: "PH",
+        };
+        const country = countryMap[city.toLowerCase()] || "ID";
+
+        if (!query) {
+          document.getElementById("queryInput").style.borderColor =
+            "var(--red)";
+          setTimeout(
+            () =>
+              (document.getElementById("queryInput").style.borderColor = ""),
+            1500
+          );
+          showNotif("Masukkan pertanyaan analisis terlebih dahulu");
+          return;
+        }
+        if (!city) {
+          document.getElementById("cityInput").style.borderColor = "var(--red)";
+          setTimeout(
+            () => (document.getElementById("cityInput").style.borderColor = ""),
+            1500
+          );
+          showNotif("Masukkan nama wilayah terlebih dahulu");
+          return;
+        }
+
+        isLoading = true;
+        document.getElementById("analyzeBtn").disabled = true;
+        document.getElementById("btnText").textContent = "Menganalisis...";
+        document.getElementById("loadingPanel").style.display = "block";
+        document.getElementById("resultPanel").style.display = "none";
+
+        const steps = ["step1", "step2", "step3", "step4"];
+        const labels = [
+          "Mengambil data lingkungan...",
+          "Menganalisis tren & risiko...",
+          "Menilai dampak sosial...",
+          "Menyusun laporan...",
+        ];
+        steps.forEach((s, i) => {
+          setTimeout(() => {
+            steps.slice(0, i).forEach((prev) => {
+              document.getElementById(prev).className = "step-card done";
+              document
+                .getElementById(prev)
+                .querySelector(".step-status").textContent = "Selesai ✓";
+            });
+            const el = document.getElementById(s);
+            el.className = "step-card running";
+            el.querySelector(".step-status").textContent = labels[i];
+          }, i * 2200);
+        });
+
+        try {
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query,
+              city,
+              country_code: country,
+              session_id: sessionId,
+            }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.session_id) {
+            sessionId = data.session_id;
+            localStorage.setItem("eco_session", sessionId);
+          }
+
+          steps.forEach((s) => {
+            document.getElementById(s).className = "step-card done";
+            document
+              .getElementById(s)
+              .querySelector(".step-status").textContent = "Selesai ✓";
+          });
+
+          setTimeout(() => {
+            document.getElementById("loadingPanel").style.display = "none";
+            renderResult(data);
+            analysisCount++;
+            document.getElementById("heroAnalysisCount").textContent =
+              analysisCount;
+            document.getElementById("navBadge").style.display = "inline";
+            showNotif(
+              "Analisis selesai! " + data.city + " · Risiko " + data.risk_level
+            );
+          }, 500);
+        } catch (err) {
+          document.getElementById("loadingPanel").style.display = "none";
+          document.getElementById("resultPanel").style.display = "block";
+          document.getElementById("responseText").textContent =
+            "Error: " +
+            err.message +
+            "\n\nPastikan API keys sudah dikonfigurasi di file .env dan server berjalan.";
+          document.getElementById("resultPanel").style.display = "block";
+          showNotif("Terjadi kesalahan: " + err.message);
+        } finally {
+          isLoading = false;
+          document.getElementById("analyzeBtn").disabled = false;
+          document.getElementById("btnText").textContent =
+            "Jalankan Analisis Multi-Agent";
+        }
+      }
+
+      function renderResult(data) {
+        lastResult = data;
+        const m = data.metrics || {};
+
+        // Result header
+        document.getElementById("resultCity").textContent =
+          data.city + ", " + (data.metrics?.country || "");
+        document.getElementById("resultTime").textContent =
+          new Date().toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          });
+
+        const riskEl = document.getElementById("riskBadge");
+        const riskMap = {
+          rendah: "badge-green",
+          sedang: "badge-amber",
+          tinggi: "badge-red",
+          kritis: "badge-red",
+        };
+        riskEl.className =
+          "risk-badge " + (riskMap[data.risk_level] || "badge-amber");
+        riskEl.textContent = "Risiko " + (data.risk_level || "Sedang");
+
+        document.getElementById("responseText").textContent =
+          data.response || "—";
+
+        // Metrics
+        const aqi = m.aqi;
+        const temp = m.temperature;
+        const pm25 = m.pm25;
+        const hum = m.humidity;
+        document.getElementById("r-aqi").textContent =
+          aqi !== "N/A" ? aqi : "—";
+        document.getElementById("r-aqi-lbl").textContent = getAqiLabel(aqi);
+        document.getElementById("r-temp").textContent =
+          temp !== "N/A" ? temp + "°C" : "—";
+        document.getElementById("r-weather").textContent =
+          m.weather_desc || "—";
+        document.getElementById("r-pm25").textContent =
+          pm25 !== "N/A" ? pm25 : "—";
+        document.getElementById("r-humidity").textContent =
+          hum !== "N/A" ? hum + "%" : "—";
+
+        // Update summary page metrics
+        document.getElementById("s-aqi").textContent =
+          aqi !== "N/A" ? aqi : "—";
+        document.getElementById("s-aqi-lbl").textContent = getAqiLabel(aqi);
+        document.getElementById("s-temp").textContent =
+          temp !== "N/A" ? temp + "°" : "—";
+        document.getElementById("s-temp-lbl").textContent =
+          m.weather_desc || "°C";
+        document.getElementById("s-risk").textContent = capitalize(
+          data.risk_level || "—"
+        );
+        document.getElementById("s-risk-lbl").textContent =
+          "Level risiko lingkungan";
+        const socialScore = data.social?.skor_kerentanan_sosial;
+        document.getElementById("s-social").textContent =
+          socialScore !== undefined ? socialScore : "—";
+
+        const badgeEl = document.getElementById("s-aqi-badge");
+        const aqiNum = parseInt(aqi);
+        if (!isNaN(aqiNum)) {
+          if (aqiNum <= 50) {
+            badgeEl.className = "sc-badge badge-green";
+            badgeEl.textContent = "Baik";
+          } else if (aqiNum <= 100) {
+            badgeEl.className = "sc-badge badge-amber";
+            badgeEl.textContent = "Sedang";
+          } else {
+            badgeEl.className = "sc-badge badge-red";
+            badgeEl.textContent = "Tidak Sehat";
+          }
+        }
+        const riskBadgeEl = document.getElementById("s-risk-badge");
+        const riskColorMap = {
+          rendah: "badge-green",
+          sedang: "badge-amber",
+          tinggi: "badge-red",
+          kritis: "badge-red",
+        };
+        riskBadgeEl.className =
+          "sc-badge " + (riskColorMap[data.risk_level] || "badge-amber");
+        riskBadgeEl.textContent = capitalize(data.risk_level || "—");
+
+        // Monitor metrics
+        document.getElementById("m-aqi").textContent =
+          aqi !== "N/A" ? aqi : "—";
+        document.getElementById("m-aqi-desc").textContent = getAqiLabel(aqi);
+        document.getElementById("m-pm25").textContent =
+          pm25 !== "N/A" ? pm25 + " μg/m³" : "—";
+        document.getElementById("m-temp").textContent =
+          temp !== "N/A" ? temp + "°C" : "—";
+        document.getElementById("m-temp-desc").textContent =
+          m.weather_desc || "—";
+        document.getElementById("m-humidity").textContent =
+          hum !== "N/A" ? hum + "%" : "—";
+        document.getElementById("m-wind").textContent =
+          m.wind_speed !== "N/A" ? m.wind_speed + " m/s" : "—";
+        document.getElementById("m-pollutant").textContent =
+          m.dominant_pollutant || "—";
+
+        // Progress bars pemantauan
+        const aqiPct = !isNaN(aqiNum) ? Math.min((aqiNum / 300) * 100, 100) : 0;
+        const pm25Num = parseFloat(pm25);
+        const pm25Pct = !isNaN(pm25Num)
+          ? Math.min((pm25Num / 75) * 100, 100)
+          : 0;
+        const tempNum = parseFloat(temp);
+        const tempPct = !isNaN(tempNum)
+          ? Math.min(((tempNum - 15) / 25) * 100, 100)
+          : 0;
+        const humNum = parseFloat(hum);
+        const humPct = !isNaN(humNum) ? humNum : 0;
+        document.getElementById("m-aqi-bar").style.width = aqiPct + "%";
+        document.getElementById("m-aqi-bar").className =
+          "progress-fill " +
+          (aqiPct < 33
+            ? "fill-green"
+            : aqiPct < 66
+            ? "fill-amber"
+            : "fill-red");
+        document.getElementById("m-pm25-bar").style.width = pm25Pct + "%";
+        document.getElementById("m-temp-bar").style.width =
+          Math.max(0, tempPct) + "%";
+        document.getElementById("m-humidity-bar").style.width = humPct + "%";
+
+        // Agent insights
+        renderMonitorInsight(data.monitor || {});
+        renderPredictInsight(data.predict || {});
+        renderSocialInsight(data.social || {});
+
+        // Forecast
+        if (data.forecast && data.forecast.length > 0) {
+          renderForecast(data.forecast, data.city);
+        }
+
+        // Aksi
+        renderAksi(
+          data.monitor || {},
+          data.predict || {},
+          data.social || {},
+          data.city
+        );
+
+        // Kemajuan
+        updateKemajuan(data);
+
+        // History di ringkasan
+        renderHistory(data);
+
+        document.getElementById("resultPanel").style.display = "block";
+
+        // Peta
+        if (data.coordinates && data.coordinates.lat && data.coordinates.lon) {
+          showMapForLocation(
+            data.coordinates.lat,
+            data.coordinates.lon,
+            data.city,
+            data.risk_level,
+            data.metrics
+          );
+        }
+        // Groq panel
+        if (data.groq && Object.keys(data.groq).length > 0) {
+          renderGroqPanel(data.groq);
+        }
+        // Sources panel
+        if (data.sources && data.sources.length > 0) {
+          renderSourcesPanel(data.sources);
+        }
+        // Update response-sources chips
+        if (data.sources) {
+          const srcDiv = document.querySelector(".response-sources");
+          if (srcDiv) {
+            srcDiv.innerHTML = data.sources
+              .map(
+                (s) =>
+                  `<span class="src-tag" title="${s.type}">${
+                    s.name.split(" (")[0]
+                  }</span>`
+              )
+              .join("");
+          }
+        }
+      }
+
+      // ── MAP ──────────────────────────────────────────────────────────────
+      let ecoMap = null,
+        ecoMarker = null;
+      function initMap() {
+        if (ecoMap) return;
+        ecoMap = L.map("ecoMap").setView([-6.2, 106.8], 10);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+          maxZoom: 18,
+        }).addTo(ecoMap);
+      }
+      function showMapForLocation(lat, lon, cityName, riskLevel, metrics) {
+        const panel = document.getElementById("mapPanel");
+        if (!panel) return;
+        panel.style.display = "block";
+        initMap();
+        ecoMap.setView([lat, lon], 11);
+        if (ecoMarker) {
+          ecoMarker.remove();
+          ecoMarker = null;
+        }
+        const riskColors = {
+          rendah: "#22c55e",
+          sedang: "#f59e0b",
+          tinggi: "#ef4444",
+          kritis: "#7c3aed",
+        };
+        const color = riskColors[riskLevel] || "#6b7280";
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="background:${color};width:42px;height:42px;border-radius:50%;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🌿</div>`,
+          iconSize: [42, 42],
+          iconAnchor: [21, 21],
+        });
+        const aqi = metrics?.aqi ?? "N/A";
+        const temp = metrics?.temperature ?? "N/A";
+        const hum = metrics?.humidity ?? "N/A";
+        const comfort = metrics?.groq_comfort_index ?? null;
+        ecoMarker = L.marker([lat, lon], { icon }).addTo(ecoMap);
+        ecoMarker
+          .bindPopup(
+            `
+          <div style="font-family:sans-serif;min-width:190px;padding:4px 0">
+            <b style="font-size:13px">📍 ${cityName}</b><br/>
+            <span style="color:${color};font-weight:700;font-size:11px;text-transform:uppercase">● Risiko: ${riskLevel}</span>
+            <hr style="margin:6px 0;border-color:#e5e7eb"/>
+            <table style="font-size:11px;width:100%;border-collapse:collapse">
+              <tr><td style="padding:2px 0;color:#6b7280">💨 AQI</td><td style="font-weight:600">${aqi}</td></tr>
+              <tr><td style="padding:2px 0;color:#6b7280">🌡️ Suhu</td><td style="font-weight:600">${temp}°C</td></tr>
+              <tr><td style="padding:2px 0;color:#6b7280">💧 Kelembaban</td><td style="font-weight:600">${hum}%</td></tr>
+              ${
+                comfort !== null
+                  ? `<tr><td style="padding:2px 0;color:#6b7280">😊 Kenyamanan</td><td style="font-weight:600">${comfort}/100</td></tr>`
+                  : ""
+              }
+            </table>
+          </div>`
+          )
+          .openPopup();
+        // Fix map render in initially hidden container
+        setTimeout(() => ecoMap.invalidateSize(), 150);
+        // Update subtitle
+        document.getElementById(
+          "mapSubtitle"
+        ).textContent = `${cityName} · ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+        const rb = document.getElementById("mapRiskBadge");
+        const riskBadgeMap = {
+          rendah: "badge-green",
+          sedang: "badge-amber",
+          tinggi: "badge-red",
+          kritis: "badge-red",
+        };
+        rb.className = "sc-badge " + (riskBadgeMap[riskLevel] || "badge-amber");
+        rb.textContent = "Risiko " + riskLevel;
+      }
+
+      // ── GROQ PANEL ───────────────────────────────────────────────────────
+      function renderGroqPanel(groq) {
+        const panel = document.getElementById("groqPanel");
+        if (!panel) return;
+        const ci = groq.indeks_kenyamanan ?? null;
+        const ciColor = ci >= 70 ? "#16a34a" : ci >= 40 ? "#d97706" : "#dc2626";
+        const ciBorder =
+          ci >= 70 ? "#22c55e" : ci >= 40 ? "#f59e0b" : "#ef4444";
+        let html = "";
+        if (ci !== null) {
+          html += `<div style="display:flex;align-items:center;gap:10px;grid-column:1/-1">
+            <div class="comfort-ring" style="color:${ciColor};border-color:${ciBorder}">${ci}</div>
+            <div><div style="font-size:0.75rem;font-weight:600;color:var(--text)">Indeks Kenyamanan</div>
+            <div style="font-size:0.7rem;color:var(--text3)">${
+              ci >= 70 ? "Nyaman" : "Kurang nyaman untuk aktivitas luar"
+            }</div></div>
+          </div>`;
+        }
+        if (groq.risiko_cuaca_ekstrem)
+          html += `<div><span style="font-size:0.68rem;color:var(--text3)">Risiko Cuaca Ekstrem</span><br/><strong>${groq.risiko_cuaca_ekstrem}</strong></div>`;
+        if (groq.trend_suhu || groq.risiko_angin_kencang)
+          html += `<div><span style="font-size:0.68rem;color:var(--text3)">Angin Kencang</span><br/><strong>${
+            groq.risiko_angin_kencang || "—"
+          }</strong></div>`;
+        if (groq.saran_aktivitas_luar)
+          html += `<div style="grid-column:1/-1"><span style="font-size:0.68rem;color:var(--text3)">Saran Aktivitas Luar</span><br/>${groq.saran_aktivitas_luar}</div>`;
+        if (groq.analisis_kondisi_saat_ini)
+          html += `<div style="grid-column:1/-1"><span style="font-size:0.68rem;color:var(--text3)">Kondisi Saat Ini</span><br/>${groq.analisis_kondisi_saat_ini}</div>`;
+        if (groq.peringatan_khusus)
+          html += `<div class="groq-warn">⚠️ <strong>Peringatan:</strong> ${groq.peringatan_khusus}</div>`;
+        document.getElementById("groqBody").innerHTML =
+          html || '<div style="color:var(--text3)">Tidak ada data Groq</div>';
+        panel.style.display = "block";
+      }
+
+      // ── SOURCES PANEL ────────────────────────────────────────────────────
+      function renderSourcesPanel(sources) {
+        const grid = document.getElementById("sourcesGrid");
+        const panel = document.getElementById("sourcesPanel");
+        if (!grid || !panel) return;
+        const typeIcons = {
+          "Cuaca Resmi Indonesia": "🏛️",
+          "Kualitas Udara": "💨",
+          "Cuaca Real-time": "⛅",
+          "Prakiraan 7 Hari": "📅",
+          "Sensor Udara": "🔬",
+          "Data Sosial": "👥",
+          Geocoding: "🗺️",
+          "Analisis AI Cuaca": "🤖",
+        };
+        grid.innerHTML = sources
+          .map((s) => {
+            const isBMKG = s.name.includes("BMKG");
+            const isUnavail = s.name.includes("tidak tersedia");
+            return `<a href="${s.url}" target="_blank" rel="noopener"
+            class="src-pill${isBMKG && !isUnavail ? " bmkg" : ""}"
+            title="${s.type}${
+              isUnavail ? " — tidak tersedia untuk wilayah ini" : ""
+            }"
+            style="${isUnavail ? "opacity:0.5;" : ""}">
+            ${typeIcons[s.type] || "🔗"} ${s.name.replace(
+              " (tidak tersedia untuk wilayah ini)",
+              ""
+            )}
+          </a>`;
+          })
+          .join("");
+        panel.style.display = "block";
+      }
+
+      function renderMonitorInsight(m) {
+        const temuan = (m.temuan_utama || []).slice(0, 3);
+        const recs = (m.rekomendasi_segera || []).slice(0, 2);
+        let html = "";
+        if (m.ringkasan)
+          html += `<div style="margin-bottom:8px">${m.ringkasan}</div>`;
+        if (temuan.length)
+          html +=
+            '<div class="ic-tags">' +
+            temuan.map((t) => `<span class="ic-tag">${t}</span>`).join("") +
+            "</div>";
+        if (recs.length)
+          html +=
+            '<div style="margin-top:8px;font-weight:600;font-size:0.72rem;color:var(--text)">Aksi Segera:</div><div class="ic-tags">' +
+            recs.map((r) => `<span class="ic-tag">${r}</span>`).join("") +
+            "</div>";
+        document.getElementById("monitorInsight").innerHTML = html || "—";
+      }
+
+      function renderPredictInsight(p) {
+        let html = "";
+        if (p.skor_risiko_iklim !== undefined)
+          html += `<div style="margin-bottom:6px">Skor Risiko Iklim: <strong style="font-family:var(--mono);font-size:1rem;color:var(--amber)">${p.skor_risiko_iklim}/100</strong></div>`;
+        if (p.risiko_banjir)
+          html += `<div>Banjir: <strong>${p.risiko_banjir}</strong></div>`;
+        if (p.risiko_kekeringan)
+          html += `<div>Kekeringan: <strong>${p.risiko_kekeringan}</strong></div>`;
+        if (p.prediksi_mingguan)
+          html += `<div style="margin-top:8px">${p.prediksi_mingguan}</div>`;
+        document.getElementById("predictInsight").innerHTML = html || "—";
+      }
+
+      function renderSocialInsight(s) {
+        let html = "";
+        if (s.skor_kerentanan_sosial !== undefined)
+          html += `<div style="margin-bottom:6px">Kerentanan Sosial: <strong style="font-family:var(--mono);font-size:1rem;color:var(--blue)">${s.skor_kerentanan_sosial}/100</strong></div>`;
+        const k = (s.kelompok_paling_terdampak || []).slice(0, 3);
+        if (k.length)
+          html +=
+            '<div class="ic-tags">' +
+            k.map((x) => `<span class="ic-tag">${x}</span>`).join("") +
+            "</div>";
+        if (s.ringkasan_sosial)
+          html += `<div style="margin-top:8px">${s.ringkasan_sosial}</div>`;
+        document.getElementById("socialInsight").innerHTML = html || "—";
+      }
+
+      function renderForecast(days, city) {
+        document.getElementById("forecast-city-label").textContent =
+          city + " — 5 hari ke depan";
+        const icons = ["☀️", "🌤️", "⛅", "🌧️", "⛈️", "🌫️", "🌡️"];
+        const grid = document.getElementById("forecastGrid");
+        grid.innerHTML = days
+          .slice(0, 5)
+          .map((d, i) => {
+            const dt = new Date(d.date);
+            const label =
+              i === 0
+                ? "Hari Ini"
+                : dt.toLocaleDateString("id-ID", { weekday: "short" });
+            const rain = parseFloat(d.precipitation) || 0;
+            const icon = rain > 10 ? "🌧️" : rain > 3 ? "🌤️" : "☀️";
+            return `<div class="fc-day${
+              i === 0 ? " today" : ""
+            }" onclick="showNotif('${label}: ${d.temp_max}°/${
+              d.temp_min
+            }° · ${rain}mm hujan')">
+      <div class="fc-date">${label}</div>
+      <div class="fc-icon">${icon}</div>
+      <div class="fc-max">${d.temp_max ?? "—"}°</div>
+      <div class="fc-min">${d.temp_min ?? "—"}°</div>
+      <div class="fc-rain">${rain}mm</div>
+    </div>`;
+          })
+          .join("");
+      }
+
+      function renderAksi(monitor, predict, social, city) {
+        const recs = [
+          ...(monitor.rekomendasi_segera || []),
+          ...(social.rekomendasi_inklusif || []),
+          ...(predict.hari_terbaik_aktivitas_luar
+            ? ["Aktivitas luar: " + predict.hari_terbaik_aktivitas_luar]
+            : []),
+          ...(social.program_prioritas || []),
+        ].slice(0, 8);
+
+        if (recs.length === 0) return;
+        aksiTotal = recs.length;
+        aksiChecked = 0;
+
+        const colors = [
+          "badge-red",
+          "badge-amber",
+          "badge-teal",
+          "badge-blue",
+          "badge-green",
+        ];
+        const tags = [
+          "Kritis",
+          "Prioritas",
+          "Sosial",
+          "Lingkungan",
+          "Jangka Panjang",
+        ];
+
+        document.getElementById(
+          "aksiSub"
+        ).textContent = `Berdasarkan analisis ${city} — klik untuk menandai selesai`;
+        document.getElementById("aksiCount").textContent =
+          recs.length + " Aksi";
+
+        document.getElementById("aksiList").innerHTML = recs
+          .map(
+            (rec, i) => `
+    <div class="aksi-item" id="aksi-${i}">
+      <div class="aksi-num" style="background:var(--green-l);color:var(--green-d)">${
+        i + 1
+      }</div>
+      <div class="aksi-content">
+        <div class="aksi-title">${rec}</div>
+        <div class="aksi-meta">
+          <span class="aksi-tag ${colors[i % colors.length]}">${
+              tags[i % tags.length]
+            }</span>
+        </div>
+      </div>
+      <div class="aksi-check" id="check-${i}" onclick="toggleAksi(${i})"></div>
+    </div>
+  `
+          )
+          .join("");
+
+        updateKemajuanAksi();
+      }
+
+      function toggleAksi(i) {
+        const el = document.getElementById("check-" + i);
+        const item = document.getElementById("aksi-" + i);
+        if (el.classList.contains("checked")) {
+          el.classList.remove("checked");
+          el.textContent = "";
+          item.style.opacity = "1";
+          aksiChecked = Math.max(0, aksiChecked - 1);
+        } else {
+          el.classList.add("checked");
+          el.textContent = "✓";
+          item.style.opacity = "0.6";
+          aksiChecked++;
+        }
+        updateKemajuanAksi();
+        showNotif(
+          "Rencana aksi " +
+            (el.classList.contains("checked") ? "selesai!" : "dibatalkan")
+        );
+      }
+
+      function updateKemajuanAksi() {
+        const pct =
+          aksiTotal > 0 ? Math.round((aksiChecked / aksiTotal) * 100) : 0;
+        document.getElementById("kj-aksi-pct").textContent = pct + "%";
+        document.getElementById("kj-aksi-fill").style.width = pct + "%";
+        document.getElementById("kj-aksi-meta").textContent =
+          aksiChecked + " dari " + aksiTotal + " aksi selesai.";
+      }
+
+      function updateKemajuan(data) {
+        const m = data.metrics || {};
+        const aqi = parseInt(m.aqi) || 0;
+        const aqiScore = aqi > 0 ? Math.max(0, 100 - Math.round(aqi / 3)) : 0;
+        document.getElementById("kj-aqi-pct").textContent = aqiScore + "%";
+        document.getElementById("kj-aqi-fill").style.width = aqiScore + "%";
+        document.getElementById(
+          "kj-aqi-meta"
+        ).textContent = `AQI ${aqi} — ${getAqiLabel(
+          aqi
+        )}. Semakin rendah AQI, semakin baik.`;
+
+        const riskScore =
+          { rendah: 80, sedang: 50, tinggi: 25, kritis: 10 }[data.risk_level] ||
+          50;
+        document.getElementById("kj-risk-pct").textContent =
+          100 - riskScore + "%";
+        document.getElementById("kj-risk-fill").style.width =
+          100 - riskScore + "%";
+        document.getElementById(
+          "kj-risk-meta"
+        ).textContent = `Tingkat risiko: ${data.risk_level}. Skor semakin tinggi berarti risiko semakin besar.`;
+
+        const soc = data.social?.skor_kerentanan_sosial || 0;
+        document.getElementById("kj-social-pct").textContent = soc + "%";
+        document.getElementById("kj-social-fill").style.width = soc + "%";
+        document.getElementById(
+          "kj-social-meta"
+        ).textContent = `Skor kerentanan sosial ${soc}/100. Semakin tinggi berarti semakin rentan.`;
+
+        document.getElementById("kj-total-pct").textContent = analysisCount + 1;
+        document.getElementById("kj-total-fill").style.width =
+          Math.min((analysisCount + 1) * 10, 100) + "%";
+        document.getElementById("kj-total-meta").textContent =
+          analysisCount +
+          1 +
+          " analisis dilakukan. Kota terakhir: " +
+          data.city;
+      }
+
+      function renderHistory(data) {
+        const container = document.getElementById("historyCards");
+        const existing = container.querySelectorAll(".history-entry");
+        const riskColorMap = {
+          rendah: "badge-green",
+          sedang: "badge-amber",
+          tinggi: "badge-red",
+          kritis: "badge-red",
+        };
+        const card = document.createElement("div");
+        card.className = "history-entry";
+        card.style.cssText =
+          "padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all 0.15s;";
+        card.onmouseover = () => (card.style.borderColor = "var(--border2)");
+        card.onmouseout = () => (card.style.borderColor = "var(--border)");
+        card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--text)">${
+        data.city
+      }</div>
+      <span class="sc-badge ${
+        riskColorMap[data.risk_level] || "badge-amber"
+      }" style="margin:0">Risiko ${data.risk_level}</span>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text2);margin-bottom:2px">${document
+      .getElementById("queryInput")
+      .value.slice(0, 80)}...</div>
+    <div style="font-size:0.68rem;color:var(--text3);font-family:var(--mono)">${new Date().toLocaleString(
+      "id-ID"
+    )}</div>
+  `;
+        if (container.querySelector(".empty-state")) container.innerHTML = "";
+        container.prepend(card);
+      }
+
+      function getAqiLabel(aqi) {
+        const n = parseInt(aqi);
+        if (isNaN(n)) return "Belum ada data";
+        if (n <= 50) return "Baik";
+        if (n <= 100) return "Sedang";
+        if (n <= 150) return "Tidak Sehat (Sensitif)";
+        if (n <= 200) return "Tidak Sehat";
+        if (n <= 300) return "Sangat Tidak Sehat";
+        return "Berbahaya";
+      }
+
+      function capitalize(s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+      }
+
+      // Health check
+      fetch("/api/health")
+        .then((r) => {
+          if (r.ok) showNotif("EcoGuardian AI siap digunakan");
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>
