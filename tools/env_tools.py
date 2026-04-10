@@ -10,11 +10,34 @@ from typing import Optional
 # Koordinat fallback untuk kota-kota umum (jika geocoding gagal)
 CITY_COORDS_FALLBACK = {
     "jakarta":      {"lat": -6.2088,  "lon": 106.8456},
-    "surabaya":     {"lat": -7.2575,  "lon": 112.7521},
+    "depok":        {"lat": -6.4025,  "lon": 106.7942},
+    "tangerang":    {"lat": -6.1783,  "lon": 106.6319},
+    "bekasi":       {"lat": -6.2349,  "lon": 106.9896},
+    "bogor":        {"lat": -6.5971,  "lon": 106.8060},
     "bandung":      {"lat": -6.9175,  "lon": 107.6191},
+    "surabaya":     {"lat": -7.2575,  "lon": 112.7521},
     "medan":        {"lat":  3.5952,  "lon":  98.6722},
     "semarang":     {"lat": -6.9932,  "lon": 110.4203},
     "makassar":     {"lat": -5.1477,  "lon": 119.4327},
+    "yogyakarta":   {"lat": -7.7956,  "lon": 110.3695},
+    "palembang":    {"lat": -2.9761,  "lon": 104.7754},
+    "pekanbaru":    {"lat":  0.5071,  "lon": 101.4478},
+    "balikpapan":   {"lat": -1.2675,  "lon": 116.8289},
+    "samarinda":    {"lat": -0.5022,  "lon": 117.1536},
+    "pontianak":    {"lat": -0.0263,  "lon": 109.3425},
+    "manado":       {"lat":  1.4748,  "lon": 124.8421},
+    "denpasar":     {"lat": -8.6705,  "lon": 115.2126},
+    "mataram":      {"lat": -8.5833,  "lon": 116.1167},
+    "kupang":       {"lat":-10.1772,  "lon": 123.6070},
+    "jayapura":     {"lat": -2.5337,  "lon": 140.7181},
+    "ambon":        {"lat": -3.6954,  "lon": 128.1814},
+    "banjarmasin":  {"lat": -3.3194,  "lon": 114.5908},
+    "serang":       {"lat": -6.1201,  "lon": 106.1503},
+    "cilegon":      {"lat": -6.0023,  "lon": 106.0052},
+    "cirebon":      {"lat": -6.7063,  "lon": 108.5570},
+    "malang":       {"lat": -7.9797,  "lon": 112.6304},
+    "solo":         {"lat": -7.5755,  "lon": 110.8243},
+    "surakarta":    {"lat": -7.5755,  "lon": 110.8243},
     "singapore":    {"lat":  1.3521,  "lon": 103.8198},
     "kuala lumpur": {"lat":  3.1390,  "lon": 101.6869},
     "bangkok":      {"lat": 13.7563,  "lon": 100.5018},
@@ -177,19 +200,46 @@ async def get_social_data(country_code: str) -> dict:
     return results
 
 
+async def get_earthquake_data() -> dict:
+    """
+    Ambil data gempa terbaru dari BMKG (100% gratis, tanpa API key).
+    Dokumentasi: https://data.bmkg.go.id/gempabumi/
+    """
+    url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url)
+            data = resp.json()
+        gempa = data.get("Infogempa", {}).get("gempa", {})
+        return {
+            "status": "ok",
+            "tanggal": gempa.get("Tanggal", "N/A"),
+            "jam": gempa.get("Jam", "N/A"),
+            "magnitude": gempa.get("Magnitude", "N/A"),
+            "kedalaman": gempa.get("Kedalaman", "N/A"),
+            "wilayah": gempa.get("Wilayah", "N/A"),
+            "potensi": gempa.get("Potensi", "N/A"),
+            "koordinat": gempa.get("Coordinates", "N/A"),
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 async def get_city_coordinates(city: str) -> Optional[dict]:
     """
-    Geocoding via OpenWeatherMap API, dengan fallback koordinat hardcoded.
+    Geocoding dengan prioritas: fallback hardcoded (akurat) → OpenWeatherMap API.
     """
-    # Coba fallback dulu (instan, tanpa API call)
+    # Cek fallback dulu — lebih akurat untuk kota Indonesia
     fallback = CITY_COORDS_FALLBACK.get(city.lower())
+    if fallback:
+        return fallback
 
     api_key = os.getenv("OPENWEATHER_API_KEY", "")
     if not api_key:
-        return fallback  # pakai fallback kalau tidak ada API key
+        return None
 
     url = "http://api.openweathermap.org/geo/1.0/direct"
-    params = {"q": city, "limit": 1, "appid": api_key}
+    params = {"q": city + ",ID", "limit": 1, "appid": api_key}
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
@@ -197,6 +247,6 @@ async def get_city_coordinates(city: str) -> Optional[dict]:
             data = resp.json()
         if data:
             return {"lat": data[0]["lat"], "lon": data[0]["lon"], "country": data[0].get("country", "")}
-        return fallback
+        return None
     except Exception:
-        return fallback
+        return None

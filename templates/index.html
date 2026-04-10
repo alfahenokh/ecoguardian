@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EcoGuardian AI — Masa Depan Berkelanjutan</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@300;400&display=swap"
@@ -184,13 +185,24 @@
         </svg>
         Lacak Kemajuan
       </button>
+      <button class="nav-item" onclick="showPage('statistik',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6"/>
+          <path d="M8 5v3l2 1.5"/>
+          <path d="M5 11l1.5-2 2 1 2-3"/>
+        </svg>
+        Statistik Global
+      </button>
 
       <div class="sidebar-footer">
-        <div class="user-chip">
-          <div class="avatar">N</div>
+        <div class="user-chip" onclick="toggleGuardian()" style="cursor:pointer" title="Buka Guardian AI">
+          <div class="avatar" style="background:linear-gradient(135deg,#16a34a,#0d9488);animation:guardianPulse 3s ease-in-out infinite;font-size:18px">🌿</div>
           <div>
-            <div class="user-name">Pengguna</div>
-            <div class="user-role">Pengaturan</div>
+            <div class="user-name">Guardian</div>
+            <div class="user-role" style="display:flex;align-items:center;gap:4px">
+              <span style="width:6px;height:6px;border-radius:50%;background:#2ecc71;display:inline-block;animation:guardianPulse 2s infinite"></span>
+              Asisten AI
+            </div>
           </div>
         </div>
       </div>
@@ -304,6 +316,12 @@
               <div class="sc-sub">Indeks kerentanan sosial</div>
               <div class="sc-badge badge-teal">World Bank</div>
             </div>
+            <div class="stat-card" style="border-left:3px solid var(--green)">
+              <div class="sc-label">🌿 Indeks Kesehatan Lingkungan</div>
+              <div class="sc-value" id="s-ikl" style="font-size:2rem">—</div>
+              <div class="sc-sub" id="s-ikl-label">Skor gabungan udara, risiko & sosial</div>
+              <div class="sc-badge badge-green" id="s-ikl-badge">Belum Dianalisis</div>
+            </div>
           </div>
 
           <div class="two-col">
@@ -378,23 +396,61 @@
               <div class="card-head">
                 <div>
                   <div class="card-title">Prakiraan Cuaca</div>
-                  <div class="card-sub" id="forecast-city-label">
-                    Ketik wilayah dan jalankan analisis
-                  </div>
+                  <div class="card-sub" id="forecast-city-label">Memuat data...</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input id="weatherCityInput" type="text" placeholder="Ketik kota..."
+                    value="Jakarta"
+                    style="font-size:0.78rem;padding:6px 12px;border-radius:8px;border:1px solid var(--border2);
+                           background:var(--surface2);color:var(--text);outline:none;width:140px;transition:border-color .2s"
+                    onfocus="this.style.borderColor='var(--green)'"
+                    onblur="this.style.borderColor='var(--border2)'"
+                    onkeydown="if(event.key==='Enter') loadWeatherForCity(this.value.trim())"
+                    oninput="clearTimeout(window._wt);window._wt=setTimeout(()=>loadWeatherForCity(this.value.trim()),800)"
+                  />
+                  <button onclick="loadWeatherForCity(document.getElementById('weatherCityInput').value.trim())"
+                    style="padding:6px 12px;border-radius:8px;border:1px solid var(--green-m);background:var(--green-l);
+                           color:var(--green-d);font-size:0.78rem;font-weight:600;cursor:pointer;transition:all .2s"
+                    onmouseover="this.style.background='var(--green-m)'"
+                    onmouseout="this.style.background='var(--green-l)'">Cari</button>
                 </div>
               </div>
               <div class="forecast-grid" id="forecastGrid">
-                <div
-                  style="
-                    text-align: center;
-                    padding: 20px;
-                    color: var(--text3);
-                    font-size: 0.78rem;
-                    width: 100%;
-                  "
-                >
-                  Belum ada data prakiraan
+                <div style="text-align:center;padding:20px;color:var(--text3);font-size:0.78rem;width:100%">
+                  Memuat prakiraan cuaca...
                 </div>
+              </div>
+              <!-- Weather Map -->
+              <div id="weatherMapWrap" style="display:none;margin:14px 0 4px">
+                <!-- Layer controls -->
+                <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+                  <span style="font-size:0.72rem;color:var(--text3);font-weight:600">Layer:</span>
+                  <button class="wmap-btn active" onclick="setWeatherLayer('precipitation_new',this)">🌧️ Hujan</button>
+                  <button class="wmap-btn" onclick="setWeatherLayer('clouds_new',this)">☁️ Awan</button>
+                  <button class="wmap-btn" onclick="setWeatherLayer('temp_new',this)">🌡️ Suhu</button>
+                  <button class="wmap-btn" onclick="setWeatherLayer('wind_new',this)">💨 Angin</button>
+                  <button class="wmap-btn" onclick="setWeatherLayer('pressure_new',this)">📊 Tekanan</button>
+                  <button class="wmap-btn" onclick="showIndonesiaMap()" style="margin-left:auto">🗺️ Peta Indonesia</button>
+                </div>
+                <div id="weatherMap" style="height:280px;width:100%;border-radius:10px;overflow:hidden"></div>
+                <div id="weatherLegend" style="margin-top:8px;font-size:0.7rem;color:var(--text3)"></div>
+              </div>
+              <!-- Indonesia Choropleth Map -->
+              <div id="indonesiaMapWrap" style="display:none;margin:14px 0 4px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div>
+                    <span style="font-size:0.82rem;font-weight:600;color:var(--text)">🗺️ Peta Curah Hujan Indonesia</span>
+                    <span style="font-size:0.7rem;color:var(--text3);margin-left:8px">Data: Open-Meteo per provinsi</span>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button class="wmap-btn active" id="imap-rain" onclick="setIndonesiaLayer('rain',this)">🌧️ Hujan</button>
+                    <button class="wmap-btn" id="imap-temp" onclick="setIndonesiaLayer('temp',this)">🌡️ Suhu</button>
+                    <button class="wmap-btn" id="imap-wind" onclick="setIndonesiaLayer('wind',this)">💨 Angin</button>
+                    <button class="wmap-btn" onclick="showCityMap()">📍 Kota</button>
+                  </div>
+                </div>
+                <div id="indonesiaMap" style="height:320px;width:100%;border-radius:10px;overflow:hidden"></div>
+                <div id="indonesiaLegend" style="margin-top:8px;font-size:0.7rem;color:var(--text3)"></div>
               </div>
             </div>
           </div>
@@ -923,6 +979,14 @@
                 <div class="step-status">Menunggu...</div>
               </div>
             </div>
+            <!-- Live Agent Thinking -->
+            <div id="agentThinking" style="margin-top:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:none">
+              <div style="font-size:0.68rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <div class="spinner" style="width:10px;height:10px;border-width:1.5px"></div>
+                Proses Berpikir Agen
+              </div>
+              <div id="thinkingText" style="font-size:0.8rem;color:var(--text2);line-height:1.7;min-height:40px;font-family:var(--mono)"></div>
+            </div>
           </div>
 
           <!-- Result Panel -->
@@ -980,6 +1044,28 @@
               </div>
             </div>
 
+     <!-- Grafik AQI 7 Hari -->
+            <div id="aqiChartWrap" style="display:none"></div>
+
+            <!-- Skor Tren -->
+            <div id="trendWrap" style="display:none"></div>
+
+            <!-- Perbandingan 2 Kota -->
+            <div id="compareWrap" style="display:none"></div>
+            <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
+              <input id="compareInput" type="text" placeholder="Bandingkan dengan kota lain..."
+                style="flex:1;font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);
+                       background:var(--surface2);color:var(--text);outline:none;transition:border-color .2s"
+                onfocus="this.style.borderColor='var(--green)'"
+                onblur="this.style.borderColor='var(--border2)'"
+                onkeydown="if(event.key==='Enter') compareCity(this.value.trim())" />
+              <button onclick="compareCity(document.getElementById('compareInput').value.trim())"
+                style="padding:8px 14px;border-radius:8px;border:1px solid var(--green-m);background:var(--green-l);
+                       color:var(--green-d);font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap">
+                ⚖️ Bandingkan
+              </button>
+            </div>
+
             <div class="insight-row">
               <div class="insight-card" onclick="openAgentModal('monitor')">
                 <div class="ic-head">
@@ -1012,6 +1098,19 @@
                 </div>
                 <div class="ic-body" id="ethicsInsight">—</div>
                 <div class="insight-card-hint">🔍 Klik untuk detail lengkap</div>
+              </div>
+            </div>
+
+            <!-- Mini Forecast di Result Panel -->
+            <div id="resultForecastWrap" style="display:none;margin-bottom:14px">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <div class="card-title">Prakiraan Cuaca</div>
+                    <div class="card-sub" id="result-forecast-label">—</div>
+                  </div>
+                </div>
+                <div class="forecast-grid" id="resultForecastGrid">—</div>
               </div>
             </div>
 
@@ -1282,31 +1381,65 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    </div><!-- end eco-dashboard -->
-
-    <!-- Notification -->
-    <div class="notif" id="notif">
-      <span>✓</span>
-      <span id="notifText"></span>
-    </div>
-
-    <!-- AGENT DETAIL MODAL -->
-    <div id="agentModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.45);align-items:center;justify-content:center" onclick="closeAgentModal(event)">
-      <div style="background:#fff;border-radius:14px;padding:28px;width:90%;max-width:560px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeIn 0.25s ease">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:8px;font-size:0.9rem;font-weight:600;color:#1a2e1a">
-            <div id="modalDot" style="width:10px;height:10px;border-radius:50%"></div>
-            <span id="modalTitle">—</span>
+        <!-- ===== PAGE: STATISTIK ===== -->
+        <div class="page" id="page-statistik">
+          <div class="section-title">Statistik Global EcoGuardian</div>
+          <div class="cards-grid stagger" id="statsCards">
+            <div class="stat-card">
+              <div class="sc-label">Total Analisis</div>
+              <div class="sc-value" id="stat-total">—</div>
+              <div class="sc-sub">Dari semua sesi</div>
+              <div class="sc-badge badge-green">Supabase Live</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Kota Terbanyak</div>
+              <div class="sc-value" id="stat-top-city" style="font-size:1.2rem">—</div>
+              <div class="sc-sub" id="stat-top-city-count">—</div>
+              <div class="sc-badge badge-blue">Paling Sering</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Risiko Dominan</div>
+              <div class="sc-value" id="stat-dominant-risk" style="font-size:1.1rem">—</div>
+              <div class="sc-sub" id="stat-dominant-risk-sub">Tingkat risiko terbanyak</div>
+              <div class="sc-badge" id="stat-dominant-risk-badge">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Distribusi Risiko</div>
+              <div class="sc-value" id="stat-kritis" style="color:var(--red);font-size:1rem">—</div>
+              <div class="sc-sub" id="stat-risk-breakdown">Kritis / Tinggi / Sedang / Rendah</div>
+              <div class="sc-badge badge-amber" id="stat-rendah">—</div>
+            </div>
           </div>
-          <div onclick="document.getElementById('agentModal').style.display='none'" style="width:28px;height:28px;border-radius:50%;border:1px solid #d1d9d1;background:#f8faf8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#7a967a">✕</div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-head">
+              <div>
+                <div class="card-title">🏆 Leaderboard Kota Paling Sering Dianalisis</div>
+                <div class="card-sub">Berdasarkan data Supabase</div>
+              </div>
+              <button class="card-action" onclick="loadStats()">Refresh</button>
+            </div>
+            <div id="leaderboardList">
+              <div class="empty-state"><div class="empty-icon">📊</div>
+              <div class="empty-title">Memuat data...</div></div>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-head"><div class="card-title">📊 Distribusi Tingkat Risiko</div></div>
+              <div id="riskDistChart" style="padding:8px 0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div class="card-title">🕐 Heatmap Waktu Analisis</div></div>
+              <div id="heatmapChart" style="padding:8px 0"></div>
+            </div>
+          </div>
         </div>
-        <div id="modalBody" style="font-size:0.86rem;line-height:1.75;color:#4a6a4a;white-space:pre-line">—</div>
+
       </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
-  </body>
+
+  <script src="/static/js/app.js"></script>
+</body>
 </html>
