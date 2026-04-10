@@ -30,7 +30,7 @@ EcoGuardian AI adalah sistem AI agentik berbasis **CrewAI** yang dirancang untuk
 - Rekomendasi inklusif yang mempertimbangkan semua lapisan masyarakat
 
 ### ✅ Bertindak secara otonom
-- 5 agen bekerja sequential tanpa intervensi manual
+- 5 agen bekerja paralel + sequential tanpa intervensi manual
 - Generate laporan otomatis yang bisa diunduh
 - Guardian AI Chat untuk tanya jawab lanjutan
 
@@ -51,7 +51,7 @@ EcoGuardian AI adalah sistem AI agentik berbasis **CrewAI** yang dirancang untuk
 ### Kerangka Kerja Agen
 - **CrewAI ≥0.80.0** oleh CrewAI Inc.
   - Tautan: https://docs.crewai.com
-  - Digunakan untuk: orkestrasi multi-agent sequential (Monitor → Predict → Social → Ethics → Report)
+  - Digunakan untuk: orkestrasi multi-agent paralel + sequential (Monitor & Predict & Social → Ethics → Report)
 
 ### LLM / AI
 - **Groq API — llama-3.1-8b-instant** oleh Groq Inc.
@@ -65,8 +65,16 @@ EcoGuardian AI adalah sistem AI agentik berbasis **CrewAI** yang dirancang untuk
   - Digunakan untuk: REST API, orkestrasi request, endpoint analisis
 
 ### Database
-- **SQLite** (built-in Python)
-  - Digunakan untuk: menyimpan riwayat sesi, cache data, history analisis
+- **Supabase (PostgreSQL)** — Database utama cloud
+  - Tautan: https://supabase.com
+  - Digunakan untuk: menyimpan riwayat analisis semua sesi, statistik global, share laporan
+  - Free tier: tersedia
+- **SQLite** — Fallback lokal jika Supabase tidak tersedia
+  - Digunakan untuk: cache data lingkungan, riwayat sesi lokal
+
+### Deployment & Server
+- **Uvicorn 0.30.6** — ASGI server untuk FastAPI
+  - Tautan: https://www.uvicorn.org
 
 ---
 
@@ -89,6 +97,7 @@ EcoGuardian AI adalah sistem AI agentik berbasis **CrewAI** yang dirancang untuk
 ### Prasyarat
 - Python 3.11+
 - API Keys: Groq, OpenWeatherMap, WAQI
+- Supabase project (opsional, ada fallback SQLite)
 
 ### Langkah Instalasi
 
@@ -107,15 +116,55 @@ pip install -r requirements.txt
 
 # 4. Konfigurasi API keys
 # Buat file .env dengan isi:
-# GROQ_API_KEY=your_key
-# OPENWEATHER_API_KEY=your_key
-# WAQI_TOKEN=your_token
+GROQ_API_KEY=your_groq_key
+OPENWEATHER_API_KEY=your_openweather_key
+WAQI_TOKEN=your_waqi_token
+
+# Supabase (opsional tapi direkomendasikan untuk statistik global)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
 
 # 5. Jalankan server
 python main.py
 ```
 
 Buka browser: `http://localhost:8000`
+
+### Setup Supabase (Opsional)
+
+Buat dua tabel berikut di Supabase SQL Editor:
+
+```sql
+-- Tabel riwayat analisis
+CREATE TABLE analysis_history (
+  id BIGSERIAL PRIMARY KEY,
+  session_id TEXT,
+  query TEXT,
+  city TEXT,
+  result_summary TEXT,
+  risk_level TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabel laporan yang di-share
+CREATE TABLE shared_reports (
+  id BIGSERIAL PRIMARY KEY,
+  share_id TEXT UNIQUE,
+  city TEXT,
+  risk_level TEXT,
+  response TEXT,
+  metrics JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabel sesi chat
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,
+  messages JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
 
 ---
 
@@ -133,34 +182,39 @@ fetch_all_env_data() — parallel async
 ├── World Bank (data sosial)
 └── BMKG (data gempa)
     ↓
-CrewAI Sequential Pipeline
-├── Monitor Agent  → analisis kondisi saat ini
-├── Predict Agent  → prediksi risiko (context: Monitor)
-├── Social Agent   → dampak sosial (context: Monitor)
-├── Ethics Agent   → audit etika (context: semua agen)
-└── Report Agent   → laporan final + rencana aksi
+CrewAI Pipeline (Paralel + Sequential)
+├── [Paralel] Monitor Agent  → analisis kondisi saat ini
+├── [Paralel] Predict Agent  → prediksi risiko 7 hari
+├── [Paralel] Social Agent   → dampak sosial & kerentanan
+├── [Sequential] Ethics Agent → audit etika semua output
+└── [Sequential] Report Agent → laporan final + rencana aksi
+    ↓
+Supabase — simpan riwayat & statistik global
     ↓
 Response → Frontend (bubble cards, peta, download)
     ↓
-Guardian AI Chat (tanya jawab lanjutan)
+Guardian AI Chat (tanya jawab lanjutan via Groq)
 ```
 
 ---
 
 ## 📊 Fitur Utama
 
-- 🌍 **Analisis Multi-Kota** — Semua kota di Indonesia terdeteksi
-- 🗺️ **Peta Cuaca Choropleth** — Visualisasi curah hujan/suhu/angin per provinsi
+- 🌍 **Analisis Multi-Kota** — Semua kota di Indonesia dan beberapa kota Asia
+- 🗺️ **Peta Cuaca Choropleth** — Visualisasi curah hujan/suhu/angin per provinsi Indonesia
 - 🤖 **Guardian AI Chat** — Asisten AI untuk tanya jawab seputar analisis
-- 📄 **Download Laporan** — Export laporan lengkap dalam format .txt
+- 📄 **Download Laporan** — Export laporan lengkap dalam format `.txt`
+- 🔗 **Share Laporan** — Bagikan hasil analisis via link unik
+- 📊 **Statistik Global** — Dashboard statistik semua analisis dari Supabase
 - 🌙 **Dark/Light Mode** — Tema yang bisa disesuaikan
 - 📱 **Responsive Design** — Tampil baik di berbagai ukuran layar
+- 🚨 **Auto-Monitor** — Cek kondisi berbahaya secara periodik tanpa analisis penuh
 
 ---
 
 ## 📝 Kutipan Perangkat Lunak
 
-> "Proyek ini menggunakan **CrewAI** untuk orkestrasi multi-agent, **Groq API (llama-3.1-8b-instant)** sebagai LLM backbone untuk reasoning dan pembuatan laporan, **FastAPI** sebagai backend framework, **WAQI API** untuk data kualitas udara real-time, **OpenWeatherMap API** untuk cuaca dan geocoding, **Open-Meteo** untuk prakiraan cuaca 7 hari, **World Bank API** untuk data sosial-ekonomi, **BMKG API** untuk data gempa bumi, dan **Leaflet.js** dengan data GeoJSON untuk visualisasi peta interaktif."
+> "Proyek ini menggunakan **CrewAI** untuk orkestrasi multi-agent, **Groq API (llama-3.1-8b-instant)** sebagai LLM backbone untuk reasoning dan pembuatan laporan, **FastAPI** sebagai backend framework, **Supabase (PostgreSQL)** sebagai database cloud untuk statistik global dan riwayat analisis, **SQLite** sebagai fallback database lokal, **WAQI API** untuk data kualitas udara real-time, **OpenWeatherMap API** untuk cuaca dan geocoding, **Open-Meteo** untuk prakiraan cuaca 7 hari, **World Bank API** untuk data sosial-ekonomi, **BMKG API** untuk data gempa bumi, dan **Leaflet.js** dengan data GeoJSON untuk visualisasi peta interaktif."
 
 ---
 
